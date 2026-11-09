@@ -47,3 +47,34 @@ variable "app_subnet_address_prefix" {
   type        = string
   default     = "10.0.2.0/24"
 }
+
+# Virtual Machine Variables
+
+variable "vm_name" {
+  description = "Name of the Linux Virtual Machine"
+  type        = string
+  default     = "vm-az104-web"
+}
+
+variable "vm_size" {
+  description = "Size of the Linux Virtual Machine"
+  type        = string
+  default     = "Standard_B1s"
+}
+
+variable "admin_username" {
+  description = "Linux administrator username"
+  type        = string
+  default     = "azureadmin"
+}
+
+variable "admin_source_ip" {
+  description = "Public IP address allowed to SSH into the VM"
+  type        = string
+}
+
+variable "ssh_public_key" {
+  description = "SSH public key for VM authentication"
+  type        = string
+  sensitive   = true
+}

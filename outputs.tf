@@ -49,3 +49,30 @@ output "app_nsg_id" {
   description = "ID of the Application Network Security Group"
   value       = azurerm_network_security_group.app_nsg.id
 }
+
+# Virtual Machine Outputs
+
+output "vm_name" {
+  description = "Name of the Linux Virtual Machine"
+  value       = azurerm_linux_virtual_machine.web_vm.name
+}
+
+output "vm_size" {
+  description = "Size of the Linux Virtual Machine"
+  value       = azurerm_linux_virtual_machine.web_vm.size
+}
+
+output "vm_public_ip" {
+  description = "Public IP address of the Linux VM"
+  value       = azurerm_public_ip.vm_public_ip.ip_address
+}
+
+output "vm_private_ip" {
+  description = "Private IP address of the Linux VM"
+  value       = azurerm_network_interface.vm_nic.private_ip_address
+}
+
+output "vm_admin_username" {
+  description = "Linux administrator username"
+  value       = var.admin_username
+}
