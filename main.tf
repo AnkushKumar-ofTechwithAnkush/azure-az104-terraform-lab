@@ -184,3 +184,58 @@ resource "azurerm_linux_virtual_machine" "web_vm" {
     ManagedBy   = "Terraform"
   }
 }
+# Azure Storage Account
+
+resource "azurerm_storage_account" "az104_storage" {
+  name                = var.storage_account_name
+  resource_group_name = var.resource_group_name
+  location            = var.location
+
+  account_kind             = "StorageV2"
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+
+  access_tier = "Hot"
+
+  min_tls_version                 = "TLS1_2"
+  https_traffic_only_enabled      = true
+  allow_nested_items_to_be_public = false
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Azure Blob Storage Container
+
+resource "azurerm_storage_container" "documents" {
+  name                  = var.storage_container_name
+  storage_account_id    = azurerm_storage_account.az104_storage.id
+  container_access_type = "private"
+}
+
+
+# Blob Lifecycle Management Policy
+
+resource "azurerm_storage_management_policy" "az104_lifecycle" {
+  storage_account_id = azurerm_storage_account.az104_storage.id
+
+  rule {
+    name    = "documents-lifecycle"
+    enabled = true
+
+    filters {
+      prefix_match = ["documents/"]
+      blob_types   = ["blockBlob"]
+    }
+
+    actions {
+      base_blob {
+        tier_to_cool_after_days_since_modification_greater_than = 30
+        delete_after_days_since_modification_greater_than       = 365
+      }
+    }
+  }
+}

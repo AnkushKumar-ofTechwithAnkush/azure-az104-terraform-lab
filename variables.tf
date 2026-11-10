@@ -78,3 +78,17 @@ variable "ssh_public_key" {
   type        = string
   sensitive   = true
 }
+
+
+# Storage Account Variables
+
+variable "storage_account_name" {
+  description = "Globally unique Azure Storage Account name"
+  type        = string
+}
+
+variable "storage_container_name" {
+  description = "Name of the Blob Storage container"
+  type        = string
+  default     = "documents"
+}

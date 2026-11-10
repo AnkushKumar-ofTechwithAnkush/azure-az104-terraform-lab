@@ -1,0 +1,6 @@
+Welcome to my Azure AZ-104 Terraform project.
+
+This file is uploaded to Azure Blob Storage
+using Azure CLI.
+
+Project: azure-az104-terraform-lab

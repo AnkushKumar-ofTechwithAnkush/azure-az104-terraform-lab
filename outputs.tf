@@ -76,3 +76,34 @@ output "vm_admin_username" {
   description = "Linux administrator username"
   value       = var.admin_username
 }
+
+# Storage Account Outputs
+
+output "storage_account_name" {
+  description = "Name of the Azure Storage Account"
+  value       = azurerm_storage_account.az104_storage.name
+}
+
+output "storage_account_id" {
+  description = "Resource ID of the Storage Account"
+  value       = azurerm_storage_account.az104_storage.id
+}
+
+output "storage_primary_location" {
+  description = "Primary location of the Storage Account"
+  value       = azurerm_storage_account.az104_storage.primary_location
+}
+
+# Blob Container Output
+
+output "storage_container_name" {
+  description = "Name of the Blob Container"
+  value       = azurerm_storage_container.documents.name
+}
+
+# Storage Replication Output
+
+output "storage_replication_type" {
+  description = "Storage redundancy configuration"
+  value       = azurerm_storage_account.az104_storage.account_replication_type
+}
