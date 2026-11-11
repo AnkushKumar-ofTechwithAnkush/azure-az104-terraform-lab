@@ -155,6 +155,10 @@ resource "azurerm_linux_virtual_machine" "web_vm" {
 
   admin_username = var.admin_username
 
+  identity {
+    type = "SystemAssigned"
+  }
+
   network_interface_ids = [
     azurerm_network_interface.vm_nic.id
   ]
@@ -238,4 +242,41 @@ resource "azurerm_storage_management_policy" "az104_lifecycle" {
       }
     }
   }
+}
+
+#Assign Storage Blob Data Reader to Linux VM Managed Identity
+
+resource "azurerm_role_assignment" "vm_storage_reader" {
+  scope                = azurerm_storage_account.az104_storage.id
+  role_definition_name = "Storage Blob Data Reader"
+  principal_id         = azurerm_linux_virtual_machine.web_vm.identity[0].principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+# Azure Policy: Restrict allowed Azure locations
+
+resource "azurerm_resource_group_policy_assignment" "allowed_locations" {
+  name                 = "policy-allowed-locations"
+  resource_group_id    = azurerm_resource_group.az104.id
+  policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c"
+
+  display_name = "Restrict resources to approved Azure locations"
+
+  description = "Only allow resources in the configured Azure region."
+
+  parameters = jsonencode({
+    listOfAllowedLocations = {
+      value = [var.location]
+    }
+  })
+}
+
+# Protect Storage Account from accidental deletion
+
+resource "azurerm_management_lock" "storage_lock" {
+  name       = "lock-storage-no-delete"
+  scope      = azurerm_storage_account.az104_storage.id
+  lock_level = "CanNotDelete"
+
+  notes = "Protect AZ-104 lab Storage Account from accidental deletion."
 }

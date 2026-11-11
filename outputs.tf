@@ -107,3 +107,32 @@ output "storage_replication_type" {
   description = "Storage redundancy configuration"
   value       = azurerm_storage_account.az104_storage.account_replication_type
 }
+
+
+# Managed Identity Output
+
+output "vm_managed_identity_principal_id" {
+  description = "VM Managed Identity Principal ID"
+  value       = azurerm_linux_virtual_machine.web_vm.identity[0].principal_id
+}
+
+# RBAC Output
+
+output "vm_storage_role_assignment_id" {
+  description = "Storage RBAC assignment ID"
+  value       = azurerm_role_assignment.vm_storage_reader.id
+}
+
+# Azure Policy Output
+
+output "allowed_locations_policy_id" {
+  description = "Allowed locations policy assignment ID"
+  value       = azurerm_resource_group_policy_assignment.allowed_locations.id
+}
+
+# Resource Lock Output
+
+output "storage_resource_lock_id" {
+  description = "Storage Account resource lock ID"
+  value       = azurerm_management_lock.storage_lock.id
+}
