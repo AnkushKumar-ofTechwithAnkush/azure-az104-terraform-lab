@@ -280,3 +280,186 @@ resource "azurerm_management_lock" "storage_lock" {
 
   notes = "Protect AZ-104 lab Storage Account from accidental deletion."
 }
+
+
+# Log Analytics Workspace
+
+resource "azurerm_log_analytics_workspace" "az104_law" {
+  name                = "law-az104-dev"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  sku               = "PerGB2018"
+  retention_in_days = 30
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Azure Monitor Agent for Linux VM
+
+resource "azurerm_virtual_machine_extension" "azure_monitor_agent" {
+  name               = "AzureMonitorLinuxAgent"
+  virtual_machine_id = azurerm_linux_virtual_machine.web_vm.id
+
+  publisher            = "Microsoft.Azure.Monitor"
+  type                 = "AzureMonitorLinuxAgent"
+  type_handler_version = "1.0"
+
+  auto_upgrade_minor_version = true
+}
+
+# Data Collection Rule for Linux VM
+
+resource "azurerm_monitor_data_collection_rule" "linux_dcr" {
+  name                = "dcr-az104-linux"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+
+  destinations {
+    log_analytics {
+      name                  = "destination-law"
+      workspace_resource_id = azurerm_log_analytics_workspace.az104_law.id
+    }
+  }
+
+  data_sources {
+    syslog {
+      name    = "linux-syslog"
+      streams = ["Microsoft-Syslog"]
+      facility_names = [
+        "auth",
+        "authpriv",
+        "cron",
+        "daemon",
+        "kern",
+        "syslog",
+        "user"
+      ]
+
+      log_levels = [
+        "Info",
+        "Notice",
+        "Warning",
+        "Error",
+        "Critical",
+        "Alert",
+        "Emergency"
+      ]
+    }
+  }
+
+  data_flow {
+    streams      = ["Microsoft-Syslog"]
+    destinations = ["destination-law"]
+  }
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+# Associate Data Collection Rule with Linux VM
+
+resource "azurerm_monitor_data_collection_rule_association" "linux_dcr_association" {
+  name                    = "dcr-association-az104"
+  target_resource_id      = azurerm_linux_virtual_machine.web_vm.id
+  data_collection_rule_id = azurerm_monitor_data_collection_rule.linux_dcr.id
+  depends_on = [
+    azurerm_virtual_machine_extension.azure_monitor_agent
+  ]
+
+}
+
+# Diagnostic Settings for Linux VM
+
+resource "azurerm_monitor_diagnostic_setting" "vm_diagnostics" {
+  name                       = "diag-az104-vm"
+  target_resource_id         = azurerm_linux_virtual_machine.web_vm.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.az104_law.id
+
+  enabled_metric {
+    category = "AllMetrics"
+  }
+}
+
+# Azure Monitor Metric Alert for VM CPU
+
+resource "azurerm_monitor_metric_alert" "vm_cpu_alert" {
+  name                = "alert-az104-vm-high-cpu"
+  resource_group_name = var.resource_group_name
+
+  scopes = [
+    azurerm_linux_virtual_machine.web_vm.id
+  ]
+
+  description = "Alert when VM average CPU utilization exceeds 80 percent."
+
+  severity    = 2
+  enabled     = true
+  frequency   = "PT1M"
+  window_size = "PT5M"
+
+  criteria {
+    metric_namespace = "Microsoft.Compute/virtualMachines"
+    metric_name      = "Percentage CPU"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = 80
+  }
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+# Azure Recovery Services Vault
+
+resource "azurerm_recovery_services_vault" "az104_vault" {
+  name                = "rsv-az104-dev"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  sku               = "Standard"
+  storage_mode_type = "LocallyRedundant"
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Daily Azure VM Backup Policy
+
+resource "azurerm_backup_policy_vm" "linux_backup_policy" {
+  name                = "policy-az104-linux-daily"
+  resource_group_name = var.resource_group_name
+  recovery_vault_name = azurerm_recovery_services_vault.az104_vault.name
+
+  timezone = "UTC"
+
+  backup {
+    frequency = "Daily"
+    time      = "23:00"
+  }
+
+  retention_daily {
+    count = 7
+  }
+}
+
+# Protect Linux VM using Azure Backup
+
+resource "azurerm_backup_protected_vm" "web_vm_backup" {
+  resource_group_name = var.resource_group_name
+  recovery_vault_name = azurerm_recovery_services_vault.az104_vault.name
+
+  source_vm_id     = azurerm_linux_virtual_machine.web_vm.id
+  backup_policy_id = azurerm_backup_policy_vm.linux_backup_policy.id
+}

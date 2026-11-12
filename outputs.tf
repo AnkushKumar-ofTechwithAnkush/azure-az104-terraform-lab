@@ -136,3 +136,39 @@ output "storage_resource_lock_id" {
   description = "Storage Account resource lock ID"
   value       = azurerm_management_lock.storage_lock.id
 }
+
+# Log Analytics Workspace Outputs
+
+output "log_analytics_workspace_name" {
+  description = "Name of Log Analytics Workspace"
+  value       = azurerm_log_analytics_workspace.az104_law.name
+}
+
+output "log_analytics_workspace_id" {
+  description = "Resource ID of Log Analytics Workspace"
+  value       = azurerm_log_analytics_workspace.az104_law.id
+}
+
+# Monitoring Outputs
+
+output "data_collection_rule_id" {
+  description = "Linux VM Data Collection Rule ID"
+  value       = azurerm_monitor_data_collection_rule.linux_dcr.id
+}
+
+output "vm_cpu_alert_id" {
+  description = "VM CPU Metric Alert ID"
+  value       = azurerm_monitor_metric_alert.vm_cpu_alert.id
+}
+
+# Backup Outputs
+
+output "recovery_services_vault_name" {
+  description = "Recovery Services Vault name"
+  value       = azurerm_recovery_services_vault.az104_vault.name
+}
+
+output "vm_backup_policy_id" {
+  description = "VM Backup Policy ID"
+  value       = azurerm_backup_policy_vm.linux_backup_policy.id
+}
