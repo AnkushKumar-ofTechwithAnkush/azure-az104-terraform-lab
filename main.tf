@@ -463,3 +463,149 @@ resource "azurerm_backup_protected_vm" "web_vm_backup" {
   source_vm_id     = azurerm_linux_virtual_machine.web_vm.id
   backup_policy_id = azurerm_backup_policy_vm.linux_backup_policy.id
 }
+
+
+# Second Virtual Network - Spoke
+
+resource "azurerm_virtual_network" "spoke_vnet" {
+  name                = "vnet-az104-spoke"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  address_space = ["10.20.0.0/16"]
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Spoke Virtual Network Subnet
+
+resource "azurerm_subnet" "spoke_subnet" {
+  name                 = "snet-spoke"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.spoke_vnet.name
+
+  address_prefixes = ["10.20.1.0/24"]
+}
+
+# Peering: Existing VNet to Spoke VNet
+
+resource "azurerm_virtual_network_peering" "main_to_spoke" {
+  name = "peer-main-to-spoke"
+
+  resource_group_name = var.resource_group_name
+
+  virtual_network_name      = azurerm_virtual_network.az104_vnet.name
+  remote_virtual_network_id = azurerm_virtual_network.spoke_vnet.id
+
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = false
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+}
+
+# Peering: Spoke VNet to Existing VNet
+
+resource "azurerm_virtual_network_peering" "spoke_to_main" {
+  name = "peer-spoke-to-main"
+
+  resource_group_name = var.resource_group_name
+
+  virtual_network_name      = azurerm_virtual_network.spoke_vnet.name
+  remote_virtual_network_id = azurerm_virtual_network.az104_vnet.id
+
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = false
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+}
+
+
+# Private DNS Zone for Azure Blob Storage
+
+resource "azurerm_private_dns_zone" "blob_private_dns" {
+  name                = "privatelink.blob.core.windows.net"
+  resource_group_name = var.resource_group_name
+}
+
+
+
+# Link Private DNS Zone with Existing VNet
+
+resource "azurerm_private_dns_zone_virtual_network_link" "blob_dns_vnet_link" {
+  name = "link-blob-dns-main-vnet"
+
+  private_dns_zone_id = azurerm_private_dns_zone.blob_private_dns.id
+
+  virtual_network_id = azurerm_virtual_network.az104_vnet.id
+
+  registration_enabled = false
+}
+
+
+# Private Endpoint for Azure Blob Storage
+
+resource "azurerm_private_endpoint" "storage_blob_pe" {
+  name                = "pe-az104-storage-blob"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  subnet_id = azurerm_subnet.app_subnet.id
+
+  private_service_connection {
+    name                           = "psc-az104-storage-blob"
+    private_connection_resource_id = azurerm_storage_account.az104_storage.id
+
+    subresource_names    = ["blob"]
+    is_manual_connection = false
+  }
+
+  private_dns_zone_group {
+    name = "default"
+
+    private_dns_zone_ids = [
+      azurerm_private_dns_zone.blob_private_dns.id
+    ]
+  }
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
+
+
+# Route Table for Spoke Subnet
+
+resource "azurerm_route_table" "spoke_route_table" {
+  name                = "rt-az104-spoke"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+# Custom route for Spoke VNet
+
+resource "azurerm_route" "spoke_local_route" {
+  name                = "route-spoke-local"
+  resource_group_name = var.resource_group_name
+  route_table_name    = azurerm_route_table.spoke_route_table.name
+
+  address_prefix = "10.20.0.0/16"
+  next_hop_type  = "VnetLocal"
+}
+
+# Associate Route Table with Spoke Subnet
+
+resource "azurerm_subnet_route_table_association" "spoke_route_association" {
+  subnet_id      = azurerm_subnet.spoke_subnet.id
+  route_table_id = azurerm_route_table.spoke_route_table.id
+}

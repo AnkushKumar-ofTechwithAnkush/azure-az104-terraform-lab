@@ -172,3 +172,49 @@ output "vm_backup_policy_id" {
   description = "VM Backup Policy ID"
   value       = azurerm_backup_policy_vm.linux_backup_policy.id
 }
+
+
+# Spoke VNet Outputs
+
+output "spoke_vnet_id" {
+  description = "ID of the Spoke Virtual Network"
+  value       = azurerm_virtual_network.spoke_vnet.id
+}
+
+output "spoke_subnet_id" {
+  description = "ID of the Spoke Subnet"
+  value       = azurerm_subnet.spoke_subnet.id
+}
+
+# VNet Peering Outputs
+
+output "main_to_spoke_peering_id" {
+  description = "Main to Spoke VNet peering ID"
+  value       = azurerm_virtual_network_peering.main_to_spoke.id
+}
+
+output "spoke_to_main_peering_id" {
+  description = "Spoke to Main VNet peering ID"
+  value       = azurerm_virtual_network_peering.spoke_to_main.id
+}
+
+# Private Endpoint Output
+
+output "storage_private_endpoint_ip" {
+  description = "Private IP of the Storage Blob endpoint"
+  value       = azurerm_private_endpoint.storage_blob_pe.private_service_connection[0].private_ip_address
+}
+
+# Private DNS Output
+
+output "blob_private_dns_zone_id" {
+  description = "Private DNS Zone ID"
+  value       = azurerm_private_dns_zone.blob_private_dns.id
+}
+
+# Route Table Output
+
+output "spoke_route_table_id" {
+  description = "Spoke Route Table ID"
+  value       = azurerm_route_table.spoke_route_table.id
+}
