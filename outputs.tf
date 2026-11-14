@@ -218,3 +218,34 @@ output "spoke_route_table_id" {
   description = "Spoke Route Table ID"
   value       = azurerm_route_table.spoke_route_table.id
 }
+
+# Load Balancer Outputs
+
+output "load_balancer_public_ip" {
+  description = "Public IP of Azure Load Balancer"
+  value       = azurerm_public_ip.lb_public_ip.ip_address
+}
+
+output "load_balancer_id" {
+  description = "Azure Load Balancer Resource ID"
+  value       = azurerm_lb.az104_lb.id
+}
+
+# Application Gateway Outputs
+
+output "application_gateway_public_ip" {
+  description = "Public IP of Application Gateway"
+  value       = azurerm_public_ip.appgw_public_ip.ip_address
+}
+
+output "application_gateway_id" {
+  description = "Application Gateway Resource ID"
+  value       = azurerm_application_gateway.az104_appgw.id
+}
+
+# Application Gateway Subnet Output
+
+output "application_gateway_subnet_id" {
+  description = "Dedicated Application Gateway Subnet ID"
+  value       = azurerm_subnet.appgw_subnet.id
+}

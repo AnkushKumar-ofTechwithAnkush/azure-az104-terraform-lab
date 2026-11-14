@@ -609,3 +609,219 @@ resource "azurerm_subnet_route_table_association" "spoke_route_association" {
   subnet_id      = azurerm_subnet.spoke_subnet.id
   route_table_id = azurerm_route_table.spoke_route_table.id
 }
+
+# Allow HTTP traffic to Web VM
+
+resource "azurerm_network_security_rule" "allow_http" {
+  name      = "Allow-HTTP"
+  priority  = 300
+  direction = "Inbound"
+  access    = "Allow"
+  protocol  = "Tcp"
+
+  source_port_range      = "*"
+  destination_port_range = "80"
+
+  source_address_prefix      = "Internet"
+  destination_address_prefix = "*"
+
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.web_nsg.name
+}
+
+# Allow Azure Load Balancer health probes
+
+resource "azurerm_network_security_rule" "allow_lb_probe" {
+  name      = "Allow-Azure-LB-Probe"
+  priority  = 310
+  direction = "Inbound"
+  access    = "Allow"
+  protocol  = "Tcp"
+
+  source_port_range      = "*"
+  destination_port_range = "80"
+
+  source_address_prefix      = "AzureLoadBalancer"
+  destination_address_prefix = "*"
+
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.web_nsg.name
+}
+
+# Public IP for Azure Load Balancer
+
+resource "azurerm_public_ip" "lb_public_ip" {
+  name                = "pip-az104-lb"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  allocation_method = "Static"
+  sku               = "Standard"
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+# Azure Standard Public Load Balancer
+
+resource "azurerm_lb" "az104_lb" {
+  name                = "lb-az104-web"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  sku                 = "Standard"
+
+  frontend_ip_configuration {
+    name                 = "PublicFrontend"
+    public_ip_address_id = azurerm_public_ip.lb_public_ip.id
+  }
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+# Load Balancer Backend Pool
+
+resource "azurerm_lb_backend_address_pool" "web_backend_pool" {
+  name            = "backend-pool-az104"
+  loadbalancer_id = azurerm_lb.az104_lb.id
+}
+
+# Associate Linux VM NIC with Load Balancer Backend Pool
+
+resource "azurerm_network_interface_backend_address_pool_association" "web_vm_lb_association" {
+  network_interface_id    = azurerm_network_interface.vm_nic.id
+  ip_configuration_name   = "internal"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.web_backend_pool.id
+}
+
+# Load Balancer Health Probe
+
+resource "azurerm_lb_probe" "web_health_probe" {
+  name            = "probe-az104-http"
+  loadbalancer_id = azurerm_lb.az104_lb.id
+
+  protocol            = "Http"
+  port                = 80
+  request_path        = "/"
+  interval_in_seconds = 5
+  number_of_probes    = 2
+}
+
+# Load Balancer Rule
+
+resource "azurerm_lb_rule" "web_http_rule" {
+  name            = "rule-http-az104"
+  loadbalancer_id = azurerm_lb.az104_lb.id
+
+  protocol      = "Tcp"
+  frontend_port = 80
+  backend_port  = 80
+
+  frontend_ip_configuration_name = "PublicFrontend"
+
+  backend_address_pool_ids = [
+    azurerm_lb_backend_address_pool.web_backend_pool.id
+  ]
+
+  probe_id = azurerm_lb_probe.web_health_probe.id
+
+  idle_timeout_in_minutes = 4
+  load_distribution       = "Default"
+}
+
+# Dedicated Subnet for Application Gateway
+
+resource "azurerm_subnet" "appgw_subnet" {
+  name                 = "snet-application-gateway"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.az104_vnet.name
+
+  address_prefixes = ["10.0.3.0/24"]
+}
+
+# Public IP for Application Gateway
+
+resource "azurerm_public_ip" "appgw_public_ip" {
+  name                = "pip-az104-appgw"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  allocation_method = "Static"
+  sku               = "Standard"
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+# Azure Application Gateway
+
+resource "azurerm_application_gateway" "az104_appgw" {
+  name                = "appgw-az104-web"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+
+  sku {
+    name     = "Standard_v2"
+    tier     = "Standard_v2"
+    capacity = 1
+  }
+
+  gateway_ip_configuration {
+    name      = "appgw-ip-config"
+    subnet_id = azurerm_subnet.appgw_subnet.id
+  }
+
+  frontend_ip_configuration {
+    name                 = "appgw-frontend"
+    public_ip_address_id = azurerm_public_ip.appgw_public_ip.id
+  }
+
+  frontend_port {
+    name = "port-80"
+    port = 80
+  }
+
+  backend_address_pool {
+    name = "backend-pool"
+    ip_addresses = [
+      azurerm_network_interface.vm_nic.private_ip_address
+    ]
+  }
+
+  backend_http_settings {
+    name                  = "http-settings"
+    cookie_based_affinity = "Disabled"
+    path                  = "/"
+    port                  = 80
+    protocol              = "Http"
+    request_timeout       = 30
+  }
+
+  http_listener {
+    name                           = "http-listener"
+    frontend_ip_configuration_name = "appgw-frontend"
+    frontend_port_name             = "port-80"
+    protocol                       = "Http"
+  }
+
+  request_routing_rule {
+    name                       = "routing-rule"
+    priority                   = 100
+    rule_type                  = "Basic"
+    http_listener_name         = "http-listener"
+    backend_address_pool_name  = "backend-pool"
+    backend_http_settings_name = "http-settings"
+  }
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
