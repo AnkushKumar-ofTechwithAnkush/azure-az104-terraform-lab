@@ -729,6 +729,7 @@ resource "azurerm_lb_rule" "web_http_rule" {
 
   probe_id = azurerm_lb_probe.web_health_probe.id
 
+
   idle_timeout_in_minutes = 4
   load_distribution       = "Default"
 }
@@ -823,5 +824,59 @@ resource "azurerm_application_gateway" "az104_appgw" {
     Environment = var.environment
     Project     = var.project_name
     ManagedBy   = "Terraform"
+  }
+}
+
+# Azure Cost Management - Resource Group Budget
+
+resource "azurerm_consumption_budget_resource_group" "az104_budget" {
+  name              = "budget-az104-monthly"
+  resource_group_id = azurerm_resource_group.az104.id
+
+  amount     = var.monthly_budget_amount
+  time_grain = "Monthly"
+
+  time_period {
+    start_date = "2026-11-01T00:00:00Z"
+    end_date   = "2036-11-01T00:00:00Z"
+  }
+
+  # 50% Budget Notification
+
+  notification {
+    enabled        = true
+    threshold      = 50
+    operator       = "GreaterThanOrEqualTo"
+    threshold_type = "Actual"
+
+    contact_emails = [
+      var.budget_contact_email
+    ]
+  }
+
+  # 80% Budget Notification
+
+  notification {
+    enabled        = true
+    threshold      = 80
+    operator       = "GreaterThanOrEqualTo"
+    threshold_type = "Actual"
+
+    contact_emails = [
+      var.budget_contact_email
+    ]
+  }
+
+  # 100% Budget Notification
+
+  notification {
+    enabled        = true
+    threshold      = 100
+    operator       = "GreaterThanOrEqualTo"
+    threshold_type = "Actual"
+
+    contact_emails = [
+      var.budget_contact_email
+    ]
   }
 }

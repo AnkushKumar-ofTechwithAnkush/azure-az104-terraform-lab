@@ -249,3 +249,15 @@ output "application_gateway_subnet_id" {
   description = "Dedicated Application Gateway Subnet ID"
   value       = azurerm_subnet.appgw_subnet.id
 }
+
+# Cost Management Budget Output
+
+output "azure_monthly_budget_id" {
+  description = "Azure Resource Group Budget ID"
+  value       = azurerm_consumption_budget_resource_group.az104_budget.id
+}
+
+output "azure_monthly_budget_amount" {
+  description = "Configured monthly Azure budget"
+  value       = azurerm_consumption_budget_resource_group.az104_budget.amount
+}

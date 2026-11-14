@@ -92,3 +92,16 @@ variable "storage_container_name" {
   type        = string
   default     = "documents"
 }
+
+# Azure Cost Management Variables
+
+variable "monthly_budget_amount" {
+  description = "Monthly Azure spending budget"
+  type        = number
+  default     = 500
+}
+
+variable "budget_contact_email" {
+  description = "Email address for Azure budget notifications"
+  type        = string
+}
