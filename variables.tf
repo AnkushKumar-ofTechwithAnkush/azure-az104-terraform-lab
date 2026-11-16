@@ -105,3 +105,8 @@ variable "budget_contact_email" {
   description = "Email address for Azure budget notifications"
   type        = string
 }
+
+variable "admin_public_ip" {
+  description = "Administrator public IPv4 address"
+  type        = string
+}

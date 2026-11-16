@@ -261,3 +261,26 @@ output "azure_monthly_budget_amount" {
   description = "Configured monthly Azure budget"
   value       = azurerm_consumption_budget_resource_group.az104_budget.amount
 }
+
+# Blob Container Output
+
+output "blob_container_name" {
+  description = "Azure Blob Container name"
+  value       = azurerm_storage_container.az104_container.name
+}
+
+# Azure File Share Output
+
+output "azure_file_share_name" {
+  description = "Azure File Share name"
+  value       = azurerm_storage_share.az104_file_share.name
+}
+
+
+
+# Lifecycle Policy Output
+
+output "storage_lifecycle_policy_id" {
+  description = "Storage Lifecycle Management Policy ID"
+  value       = azurerm_storage_management_policy.az104_lifecycle.id
+}

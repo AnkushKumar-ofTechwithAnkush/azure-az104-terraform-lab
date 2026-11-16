@@ -205,6 +205,22 @@ resource "azurerm_storage_account" "az104_storage" {
   https_traffic_only_enabled      = true
   allow_nested_items_to_be_public = false
 
+
+  # Blob Data Protection
+
+  blob_properties {
+    versioning_enabled = true
+
+    delete_retention_policy {
+      days = 7
+    }
+
+    container_delete_retention_policy {
+      days = 7
+    }
+  }
+
+
   tags = {
     Environment = var.environment
     Project     = var.project_name
@@ -879,4 +895,41 @@ resource "azurerm_consumption_budget_resource_group" "az104_budget" {
       var.budget_contact_email
     ]
   }
+}
+
+
+# Azure Blob Storage Container
+
+resource "azurerm_storage_container" "az104_container" {
+  name                  = "az104-lab-data"
+  storage_account_id    = azurerm_storage_account.az104_storage.id
+  container_access_type = "private"
+}
+
+# Storage Account Network Rules
+
+resource "azurerm_storage_account_network_rules" "storage_network_rules" {
+  storage_account_id = azurerm_storage_account.az104_storage.id
+
+  default_action = "Deny"
+
+  bypass = [
+    "AzureServices"
+  ]
+
+  ip_rules = [
+    var.admin_public_ip
+  ]
+}
+
+
+# Azure File Share
+
+resource "azurerm_storage_share" "az104_file_share" {
+  name               = "az104fileshare"
+  storage_account_id = azurerm_storage_account.az104_storage.id
+
+  quota            = 10
+  enabled_protocol = "SMB"
+  access_tier      = "Hot"
 }
