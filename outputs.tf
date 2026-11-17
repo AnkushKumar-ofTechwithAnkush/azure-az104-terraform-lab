@@ -284,3 +284,34 @@ output "storage_lifecycle_policy_id" {
   description = "Storage Lifecycle Management Policy ID"
   value       = azurerm_storage_management_policy.az104_lifecycle.id
 }
+
+# User Assigned Managed Identity Outputs
+
+output "user_assigned_identity_id" {
+  description = "User Assigned Identity Resource ID"
+  value       = azurerm_user_assigned_identity.az104_vm_uai.id
+}
+
+output "user_assigned_identity_principal_id" {
+  description = "User Assigned Identity Principal ID"
+  value       = azurerm_user_assigned_identity.az104_vm_uai.principal_id
+}
+
+output "user_assigned_identity_client_id" {
+  description = "User Assigned Identity Client ID"
+  value       = azurerm_user_assigned_identity.az104_vm_uai.client_id
+}
+
+# Custom RBAC Role Output
+
+output "custom_blob_role_id" {
+  description = "Custom Blob Read Only Role ID"
+  value       = azurerm_role_definition.az104_blob_reader.role_definition_resource_id
+}
+
+# Role Assignment Output
+
+output "uai_blob_role_assignment_id" {
+  description = "User Assigned Identity Blob Role Assignment ID"
+  value       = azurerm_role_assignment.uai_blob_reader.id
+}

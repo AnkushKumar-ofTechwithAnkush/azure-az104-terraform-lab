@@ -155,9 +155,15 @@ resource "azurerm_linux_virtual_machine" "web_vm" {
 
   admin_username = var.admin_username
 
+
   identity {
-    type = "SystemAssigned"
+    type = "SystemAssigned, UserAssigned"
+
+    identity_ids = [
+      azurerm_user_assigned_identity.az104_vm_uai.id
+    ]
   }
+
 
   network_interface_ids = [
     azurerm_network_interface.vm_nic.id
@@ -932,4 +938,56 @@ resource "azurerm_storage_share" "az104_file_share" {
   quota            = 10
   enabled_protocol = "SMB"
   access_tier      = "Hot"
+}
+
+# User Assigned Managed Identity
+
+resource "azurerm_user_assigned_identity" "az104_vm_uai" {
+  name                = "id-az104-web-vm"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Custom RBAC Role - Blob Read Only
+
+resource "azurerm_role_definition" "az104_blob_reader" {
+  name  = "AZ104 Blob Read Only"
+  scope = azurerm_resource_group.az104.id
+
+  description = "Allows reading Blob containers and Blob data only."
+
+  permissions {
+    actions = [
+      "Microsoft.Storage/storageAccounts/blobServices/containers/read"
+    ]
+
+    data_actions = [
+      "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read"
+    ]
+
+    not_actions = []
+
+    not_data_actions = []
+  }
+
+  assignable_scopes = [
+    azurerm_resource_group.az104.id
+  ]
+}
+
+# Assign Custom Blob Reader Role to User Assigned Identity
+
+resource "azurerm_role_assignment" "uai_blob_reader" {
+  scope = azurerm_storage_account.az104_storage.id
+
+  role_definition_id = azurerm_role_definition.az104_blob_reader.role_definition_resource_id
+
+  principal_id   = azurerm_user_assigned_identity.az104_vm_uai.principal_id
+  principal_type = "ServicePrincipal"
 }
