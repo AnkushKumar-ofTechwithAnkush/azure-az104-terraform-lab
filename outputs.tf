@@ -315,3 +315,24 @@ output "uai_blob_role_assignment_id" {
   description = "User Assigned Identity Blob Role Assignment ID"
   value       = azurerm_role_assignment.uai_blob_reader.id
 }
+
+# Disaster Recovery Resource Group
+
+output "dr_resource_group_name" {
+  description = "Disaster Recovery Resource Group"
+  value       = azurerm_resource_group.dr.name
+}
+
+# Disaster Recovery Region
+
+output "dr_region" {
+  description = "Azure Disaster Recovery Region"
+  value       = azurerm_resource_group.dr.location
+}
+
+# Disaster Recovery Vault
+
+output "dr_recovery_services_vault_id" {
+  description = "Disaster Recovery Recovery Services Vault ID"
+  value       = azurerm_recovery_services_vault.dr_vault.id
+}

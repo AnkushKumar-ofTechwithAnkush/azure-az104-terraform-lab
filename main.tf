@@ -991,3 +991,34 @@ resource "azurerm_role_assignment" "uai_blob_reader" {
   principal_id   = azurerm_user_assigned_identity.az104_vm_uai.principal_id
   principal_type = "ServicePrincipal"
 }
+
+# Disaster Recovery Resource Group
+
+resource "azurerm_resource_group" "dr" {
+  name     = "rg-az104-dr"
+  location = var.dr_location
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    Purpose     = "Disaster Recovery"
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Recovery Services Vault for Azure Site Recovery
+
+resource "azurerm_recovery_services_vault" "dr_vault" {
+  name                = "rsv-az104-dr"
+  location            = azurerm_resource_group.dr.location
+  resource_group_name = azurerm_resource_group.dr.name
+
+  sku = "Standard"
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    Purpose     = "Azure Site Recovery"
+    ManagedBy   = "Terraform"
+  }
+}

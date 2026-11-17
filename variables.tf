@@ -110,3 +110,8 @@ variable "admin_public_ip" {
   description = "Administrator public IPv4 address"
   type        = string
 }
+variable "dr_location" {
+  description = "Azure Disaster Recovery region"
+  type        = string
+  default     = "South India"
+}
