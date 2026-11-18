@@ -353,3 +353,32 @@ output "vmss_autoscale_id" {
   description = "VMSS Autoscale Setting ID"
   value       = azurerm_monitor_autoscale_setting.az104_vmss_autoscale.id
 }
+
+# App Service Plan Output
+
+output "app_service_plan_id" {
+  description = "Azure App Service Plan ID"
+  value       = azurerm_service_plan.az104_app_plan.id
+}
+
+output "app_service_plan_name" {
+  description = "Azure App Service Plan Name"
+  value       = azurerm_service_plan.az104_app_plan.name
+}
+
+# Web App Outputs
+
+output "web_app_name" {
+  description = "Azure Linux Web App Name"
+  value       = azurerm_linux_web_app.az104_web_app.name
+}
+
+output "web_app_url" {
+  description = "Azure Linux Web App URL"
+  value       = "https://${azurerm_linux_web_app.az104_web_app.default_hostname}"
+}
+
+output "web_app_identity_principal_id" {
+  description = "System Assigned Managed Identity Principal ID"
+  value       = azurerm_linux_web_app.az104_web_app.identity[0].principal_id
+}

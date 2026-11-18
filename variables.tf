@@ -126,3 +126,7 @@ variable "ssh_public_key_path" {
   type        = string
   default     = "~/.ssh/az104_lab.pub"
 }
+variable "web_app_name" {
+  description = "Globally unique Azure Web App name"
+  type        = string
+}

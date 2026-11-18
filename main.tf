@@ -1145,3 +1145,83 @@ resource "azurerm_monitor_autoscale_setting" "az104_vmss_autoscale" {
     }
   }
 }
+
+# Azure Linux App Service Plan
+
+resource "azurerm_service_plan" "az104_app_plan" {
+  name                = "asp-az104-linux"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+
+  os_type  = "Linux"
+  sku_name = "S1"
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Azure Linux Web App
+
+resource "azurerm_linux_web_app" "az104_web_app" {
+  name                = var.web_app_name
+  resource_group_name = var.resource_group_name
+  location            = var.location
+
+  service_plan_id = azurerm_service_plan.az104_app_plan.id
+
+  https_only = true
+
+  site_config {
+    always_on = true
+
+    minimum_tls_version = "1.2"
+
+    application_stack {
+      python_version = "3.12"
+    }
+  }
+
+  app_settings = {
+    "ENVIRONMENT"  = var.environment
+    "PROJECT_NAME" = var.project_name
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Linux Web App Staging Slot
+
+resource "azurerm_linux_web_app_slot" "staging" {
+  name           = "staging"
+  app_service_id = azurerm_linux_web_app.az104_web_app.id
+
+  https_only = true
+
+  site_config {
+    always_on = true
+
+    application_stack {
+      python_version = "3.12"
+    }
+  }
+
+  app_settings = {
+    "ENVIRONMENT" = "Staging"
+  }
+
+  tags = {
+    Environment = "Staging"
+    Project     = var.project_name
+  }
+}
