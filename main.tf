@@ -1022,3 +1022,126 @@ resource "azurerm_recovery_services_vault" "dr_vault" {
     ManagedBy   = "Terraform"
   }
 }
+
+
+# Azure Linux Virtual Machine Scale Set
+
+resource "azurerm_linux_virtual_machine_scale_set" "az104_vmss" {
+  name                = "vmss-az104-web"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+
+  sku       = "Standard_B1s"
+  instances = 1
+
+  admin_username                  = "azureadmin"
+  disable_password_authentication = true
+
+  upgrade_mode = "Manual"
+
+  admin_ssh_key {
+    username   = "azureadmin"
+    public_key = file(pathexpand(var.ssh_public_key_path))
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts-gen2"
+    version   = "latest"
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  network_interface {
+    name    = "vmss-az104-nic"
+    primary = true
+
+    ip_configuration {
+      name      = "internal"
+      primary   = true
+      subnet_id = var.vmss_subnet_id
+    }
+  }
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+
+  lifecycle {
+    ignore_changes = [instances]
+  }
+}
+
+# VMSS Autoscaling Configuration
+
+resource "azurerm_monitor_autoscale_setting" "az104_vmss_autoscale" {
+  name                = "autoscale-az104-vmss"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+
+  target_resource_id = azurerm_linux_virtual_machine_scale_set.az104_vmss.id
+
+  profile {
+    name = "CPU-Based-Autoscaling"
+
+    capacity {
+      default = 1
+      minimum = 1
+      maximum = 2
+    }
+
+    # Scale Out Rule
+
+    rule {
+      metric_trigger {
+        metric_name        = "Percentage CPU"
+        metric_resource_id = azurerm_linux_virtual_machine_scale_set.az104_vmss.id
+
+        time_grain       = "PT1M"
+        statistic        = "Average"
+        time_window      = "PT5M"
+        time_aggregation = "Average"
+
+        operator  = "GreaterThan"
+        threshold = 70
+      }
+
+      scale_action {
+        direction = "Increase"
+        type      = "ChangeCount"
+        value     = "1"
+        cooldown  = "PT5M"
+      }
+    }
+
+    # Scale In Rule
+
+    rule {
+      metric_trigger {
+        metric_name        = "Percentage CPU"
+        metric_resource_id = azurerm_linux_virtual_machine_scale_set.az104_vmss.id
+
+        time_grain       = "PT1M"
+        statistic        = "Average"
+        time_window      = "PT5M"
+        time_aggregation = "Average"
+
+        operator  = "LessThan"
+        threshold = 30
+      }
+
+      scale_action {
+        direction = "Decrease"
+        type      = "ChangeCount"
+        value     = "1"
+        cooldown  = "PT5M"
+      }
+    }
+  }
+}

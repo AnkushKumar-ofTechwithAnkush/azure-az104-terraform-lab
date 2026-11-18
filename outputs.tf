@@ -336,3 +336,20 @@ output "dr_recovery_services_vault_id" {
   description = "Disaster Recovery Recovery Services Vault ID"
   value       = azurerm_recovery_services_vault.dr_vault.id
 }
+
+# VM Scale Set Outputs
+
+output "vmss_id" {
+  description = "Linux VM Scale Set ID"
+  value       = azurerm_linux_virtual_machine_scale_set.az104_vmss.id
+}
+
+output "vmss_name" {
+  description = "Linux VM Scale Set Name"
+  value       = azurerm_linux_virtual_machine_scale_set.az104_vmss.name
+}
+
+output "vmss_autoscale_id" {
+  description = "VMSS Autoscale Setting ID"
+  value       = azurerm_monitor_autoscale_setting.az104_vmss_autoscale.id
+}

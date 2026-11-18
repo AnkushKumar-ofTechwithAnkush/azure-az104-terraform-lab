@@ -115,3 +115,14 @@ variable "dr_location" {
   type        = string
   default     = "South India"
 }
+
+variable "vmss_subnet_id" {
+  description = "Existing subnet ID for VM Scale Set"
+  type        = string
+}
+
+variable "ssh_public_key_path" {
+  description = "Path to SSH public key"
+  type        = string
+  default     = "~/.ssh/az104_lab.pub"
+}
