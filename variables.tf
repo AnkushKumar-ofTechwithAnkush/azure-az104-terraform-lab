@@ -130,3 +130,18 @@ variable "web_app_name" {
   description = "Globally unique Azure Web App name"
   type        = string
 }
+
+variable "container_group_name" {
+  description = "Azure Container Instance name"
+  type        = string
+}
+
+variable "container_dns_label" {
+  description = "Globally unique DNS label for ACI"
+  type        = string
+}
+
+variable "container_registry_name" {
+  description = "Azure Container Registry name"
+  type        = string
+}

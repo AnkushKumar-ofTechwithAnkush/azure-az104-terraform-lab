@@ -382,3 +382,33 @@ output "web_app_identity_principal_id" {
   description = "System Assigned Managed Identity Principal ID"
   value       = azurerm_linux_web_app.az104_web_app.identity[0].principal_id
 }
+
+output "container_group_name" {
+  description = "Azure Container Group Name"
+  value       = azurerm_container_group.az104_aci.name
+}
+
+output "container_public_ip" {
+  description = "Container Instance Public IP"
+  value       = azurerm_container_group.az104_aci.ip_address
+}
+
+output "container_fqdn" {
+  description = "Container Instance DNS Name"
+  value       = azurerm_container_group.az104_aci.fqdn
+}
+
+output "container_url" {
+  description = "Container Web Application URL"
+  value       = "http://${azurerm_container_group.az104_aci.fqdn}"
+}
+
+output "container_registry_name" {
+  description = "Azure Container Registry Name"
+  value       = azurerm_container_registry.az104_acr.name
+}
+
+output "container_registry_login_server" {
+  description = "Azure Container Registry Login Server"
+  value       = azurerm_container_registry.az104_acr.login_server
+}

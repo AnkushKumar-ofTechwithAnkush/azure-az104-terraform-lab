@@ -1225,3 +1225,63 @@ resource "azurerm_linux_web_app_slot" "staging" {
     Project     = var.project_name
   }
 }
+
+# Azure Container Instance
+
+resource "azurerm_container_group" "az104_aci" {
+  name                = var.container_group_name
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  os_type         = "Linux"
+  ip_address_type = "Public"
+  dns_name_label  = var.container_dns_label
+
+  restart_policy = "Always"
+
+  container {
+    name   = "az104-web-container"
+    image  = "mcr.microsoft.com/azuredocs/aci-helloworld:latest"
+    cpu    = 1
+    memory = 1.5
+
+    ports {
+      port     = 80
+      protocol = "TCP"
+    }
+
+    environment_variables = {
+      ENVIRONMENT = var.environment
+      PROJECT     = var.project_name
+    }
+  }
+
+  exposed_port {
+    port     = 80
+    protocol = "TCP"
+  }
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Azure Container Registry
+
+resource "azurerm_container_registry" "az104_acr" {
+
+  name                = var.container_registry_name
+  resource_group_name = var.resource_group_name
+  location            = var.location
+
+  sku           = "Basic"
+  admin_enabled = false
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
