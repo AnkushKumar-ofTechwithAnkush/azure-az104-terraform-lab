@@ -412,3 +412,14 @@ output "container_registry_login_server" {
   description = "Azure Container Registry Login Server"
   value       = azurerm_container_registry.az104_acr.login_server
 }
+
+output "private_aci_fqdn" {
+  description = "Private ACR image deployed ACI FQDN"
+  value       = azurerm_container_group.az104_private_aci.fqdn
+}
+
+output "private_aci_ip" {
+  description = "Private ACR image deployed ACI public IP"
+  value       = azurerm_container_group.az104_private_aci.ip_address
+}
+

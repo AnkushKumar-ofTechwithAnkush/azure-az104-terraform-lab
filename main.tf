@@ -1285,3 +1285,42 @@ resource "azurerm_container_registry" "az104_acr" {
     ManagedBy   = "Terraform"
   }
 }
+
+# Deploy Private ACR Image to Azure Container Instances
+
+resource "azurerm_container_group" "az104_private_aci" {
+
+  name                = "aci-az104-private"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  os_type         = "Linux"
+  ip_address_type = "Public"
+  dns_name_label  = "az104ankushprivate2026"
+  restart_policy  = "Always"
+
+  image_registry_credential {
+    server   = "az104ankushacr2026.azurecr.io"
+    username = var.acr_client_id
+    password = var.acr_client_secret
+  }
+
+  container {
+    name   = "az104-private-web"
+    image  = "az104ankushacr2026.azurecr.io/az104-web-demo:v1"
+    cpu    = 1
+    memory = 1.5
+
+    ports {
+      port     = 80
+      protocol = "TCP"
+    }
+  }
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
+
